@@ -1,10 +1,9 @@
-
 --? Un correo siempre acaba con '@gmail.com'
 --? El nombre como minimo tiene 3 caracteres y maximo 250
 CREATE TABLE
   Huesped (
     --! ID_Huesped lo generea el Sistema 
-    ID_Huesped ALWAYS GENERATED AS IDENTITY,
+    ID_Huesped INT GENERATED ALWAYS AS IDENTITY,
     Nombre VARCHAR(250) NOT NULL,
     DUI CHAR(9) NOT NULL,
     Correo VARCHAR(250) NOT NULL,
@@ -16,17 +15,17 @@ CREATE TABLE
     CONSTRAINT uq_Huesped_Correo UNIQUE (Correo),
     CONSTRAINT uq_Huesped_Telefono UNIQUE (Telefono),
     --* Verificar la integridad de los campos
-    CONSTRAINT ck_Huesped_Nombre CHECK LENGTH (Nombre) BETWEEN 3 AND 250,
-    CONSTRAINT ck_Huesped_Correo CHECK Correo LIKE '%@gmail.com'
+    CONSTRAINT ck_Huesped_Nombre CHECK (LENGTH(Nombre) BETWEEN 3 AND 250),
+    CONSTRAINT ck_Huesped_Correo CHECK (Correo LIKE '%@gmail.com')
   );
 
 --? El campo Estado puede estar 'SIN RESERVAR' o 'RESERVADO'
 --? El campo Cantidad_personas no puede ser negativo
---? El campo Fecha_inicio debe ser SIEMPRE mayor a Fecha_fin
+--? El campo Fecha_fin debe ser SIEMPRE mayor a Fecha_inicio
 CREATE TABLE
   Reservacion (
     --! ID_Reservacion lo generea el Sistema
-    ID_Reservacion ALWAYS GENERATED AS IDENTITY,
+    ID_Reservacion INT GENERATED ALWAYS AS IDENTITY,
     Estado VARCHAR(100) DEFAULT 'SIN RESERVAR',
     Cantidad_personas INT NOT NULL,
     Fecha_inicio DATE NOT NULL,
@@ -37,28 +36,28 @@ CREATE TABLE
     CONSTRAINT pk_Reservacion_IDReservacion PRIMARY KEY (ID_Reservacion),
     --* Llave foranea relacionada con -> Huesped (ID)
     CONSTRAINT fk_Reservacion_IDHuespued FOREIGN KEY (ID_Huesped) REFERENCES Huesped (ID_Huesped)
-      ON DELETE RESTRICT ON CASCADE UPDATE,
+      ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar la integridad de los campos
-    CONSTRAINT ck_Reservacion_Estado CHECK (Estado IN ('RESERVADO')),
-    CONSTRAINT ck_Reservacion_CantidadPersona CHECK Cantidad_personas > 0,
-    CONSTRAINT ck_Reservacion_Fechas CHECK Fecha_fin > Fecha_inicio
+    CONSTRAINT ck_Reservacion_Estado CHECK (Estado IN ('RESERVADO', 'SIN RESERVAR')),
+    CONSTRAINT ck_Reservacion_CantidadPersona CHECK (Cantidad_personas > 0),
+    CONSTRAINT ck_Reservacion_Fechas CHECK (Fecha_fin > Fecha_inicio)
   );
 
---? El campo Fecha_inicio debe ser MAYOR a Fecha_retiro
+--? El campo Fecha_retiro debe ser MAYOR a Fecha_inicio
 CREATE TABLE
   Estadia (
     --! ID_Estadia lo generea el Sistema
-    ID_Estadia ALWAYS GENERATED AS IDENTITY,
+    ID_Estadia INT GENERATED ALWAYS AS IDENTITY,
     Fecha_inicio DATE NOT NULL,
     Fecha_retiro DATE NOT NULL,
-    Hora_llegada DATE NOT NULL,
-    Hora_retiro DATE NOT NULL,
+    Hora_llegada TIME NOT NULL,
+    Hora_retiro TIME NOT NULL,
     ID_Reservacion INT NOT NULL,
     --* Llave primaria
-    PRIMARY KEY (ID_Estadia),
+    CONSTRAINT pk_Estadia_IDEstadia PRIMARY KEY (ID_Estadia),
     --* Llave foranea relacionada con -> Reservacion (ID)
-    FOREIGN KEY (ID_Reservacion) REFERENCES Reservacion (ID_Reservacion)
-      ON DELETE RESTRICT ON CASCADE UPDATE,
+    CONSTRAINT fk_Estadia_IDReservacion FOREIGN KEY (ID_Reservacion) REFERENCES Reservacion (ID_Reservacion)
+      ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar la integridad de los campos
     CONSTRAINT ck_Estadia_Fechas CHECK Fecha_retiro > Fecha_inicio
   );
