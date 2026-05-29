@@ -36,23 +36,31 @@ CREATE TABLE
     --* Llave primaria
     CONSTRAINT pk_Reservacion_IDReservacion PRIMARY KEY (ID_Reservacion),
     --* Llave foranea relacionada con -> Huesped (ID)
-    CONSTRAINT fk_Reservacion_IDHuespued FOREIGN KEY (ID_Huesped) REFERENCES Huesped (ID_Huesped),
+    CONSTRAINT fk_Reservacion_IDHuespued FOREIGN KEY (ID_Huesped) REFERENCES Huesped (ID_Huesped)
+      ON DELETE RESTRICT ON CASCADE UPDATE,
     --* Verificar la integridad de los campos
     CONSTRAINT ck_Reservacion_Estado CHECK (Estado IN ('RESERVADO')),
     CONSTRAINT ck_Reservacion_CantidadPersona CHECK Cantidad_personas > 0,
-    CONSTRAINT ck_Reservacion_Fechas CHECK Fecha_inicio > Fecha_fin
+    CONSTRAINT ck_Reservacion_Fechas CHECK Fecha_fin > Fecha_inicio
   );
 
+--? El campo Fecha_inicio debe ser MAYOR a Fecha_retiro
 CREATE TABLE
   Estadia (
-    ID_Estadia INT NOT NULL,
+    --! ID_Estadia lo generea el Sistema
+    ID_Estadia ALWAYS GENERATED AS IDENTITY,
     Fecha_inicio DATE NOT NULL,
     Fecha_retiro DATE NOT NULL,
     Hora_llegada DATE NOT NULL,
     Hora_retiro DATE NOT NULL,
     ID_Reservacion INT NOT NULL,
+    --* Llave primaria
     PRIMARY KEY (ID_Estadia),
+    --* Llave foranea relacionada con -> Reservacion (ID)
     FOREIGN KEY (ID_Reservacion) REFERENCES Reservacion (ID_Reservacion)
+      ON DELETE RESTRICT ON CASCADE UPDATE,
+    --* Verificar la integridad de los campos
+    CONSTRAINT ck_Estadia_Fechas CHECK Fecha_retiro > Fecha_inicio
   );
 
 CREATE TABLE
