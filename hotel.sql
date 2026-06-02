@@ -49,8 +49,8 @@ CREATE TABLE
     --* Campos UNICOS para huesped
     CONSTRAINT uq_Servicio_Nombre UNIQUE (Nombre),
     --* Verificar campos
-    CONSTRAINT uq_Servicio_PrecioUnitario BETWEEN 1 AND 1000,
-    CONSTRAINT ck_Servicio_Tipo CHECK Servicio IN ('BIENESTAR', 'DEPORTIVOS', 'HABITACION', 'ALIMENTACION', 'ENTRETENIMIENTO')
+    CONSTRAINT uq_Servicio_PrecioUnitario CHECK (Precio_Unitario BETWEEN 1 AND 1000),
+    CONSTRAINT ck_Servicio_Tipo CHECK (Nombre IN ('BIENESTAR', 'DEPORTIVOS', 'HABITACION', 'ALIMENTACION', 'ENTRETENIMIENTO'))
   );
 
 CREATE TABLE
@@ -104,12 +104,12 @@ CREATE TABLE
     Precio NUMERIC(10, 2) NOT NULL,
     ID_Hotel INT NOT NULL,
     --* Llave primaria del Servicio
-    PRIMARY KEY (Numero, ID_Hotel),
+    PRIMARY KEY (Numero, ID_Hotel), 
     --* Llave foranea Habitacion -> Hotel (ID)
     FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel)
-      ON DELETE RESTRICT ON CASCADE UPDATE,
+      ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar campos
-    CONSTRAINT ck_Habitacion_Tipo CHECK Habitacion IN ('INDIVIDUAL', 'DOBLE', 'FAMILIAR', 'SUITE')
+    CONSTRAINT ck_Habitacion_Tipo CHECK (Tipo IN ('INDIVIDUAL', 'DOBLE', 'FAMILIAR', 'SUITE'))
   );
 
 CREATE TABLE
@@ -124,7 +124,8 @@ CREATE TABLE
     ID_Supervisor INT NOT NULL,
     PRIMARY KEY (ID_Empleado),
     FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel),
-    FOREIGN KEY (ID_Supervisor) REFERENCES Empleado (ID_Empleado) UNIQUE (Correo)
+    FOREIGN KEY (ID_Supervisor) REFERENCES Empleado (ID_Empleado),
+    UNIQUE (Correo)
   );
 
 CREATE TABLE
@@ -178,5 +179,5 @@ CREATE TABLE
     ID_Hotel INT NOT NULL,
     PRIMARY KEY (ID_Estadia, Numero, ID_Hotel),
     FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia),
-    FOREIGN KEY (Numero, ID_Hotel) REFERENCES Habitacion (Numero,)
+    FOREIGN KEY (Numero, ID_Hotel) REFERENCES Habitacion (Numero, ID_Hotel)
   );
