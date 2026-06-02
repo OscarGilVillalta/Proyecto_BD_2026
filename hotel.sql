@@ -1,184 +1,182 @@
---? Un correo siempre acaba con '@gmail.com'
---? El nombre como minimo tiene 3 caracteres y maximo 250
 CREATE TABLE
   Huesped (
-    --! ID_Huesped lo generea el Sistema 
+    --! PK
     ID_Huesped INT GENERATED ALWAYS AS IDENTITY,
     Nombre VARCHAR(250) NOT NULL,
     DUI CHAR(9) NOT NULL,
     Correo VARCHAR(250) NOT NULL,
     Telefono CHAR(8) NOT NULL,
     --* Llave primaria de Huesped
-    CONSTRAINT pk_Huespued_idHuesped PRIMARY KEY (ID_Huesped),
-    --* Campos unicos de la tabla
+    CONSTRAINT pk_Huesped_IDHuesped PRIMARY KEY (ID_Huesped),
+    --* Campos UNICOS para huesped
     CONSTRAINT uq_Huesped_DUI UNIQUE (DUI),
-    CONSTRAINT uq_Huesped_Correo UNIQUE (Correo),
-    CONSTRAINT uq_Huesped_Telefono UNIQUE (Telefono),
-    --* Verificar la integridad de los campos
-    CONSTRAINT ck_Huesped_Nombre CHECK (LENGTH(Nombre) BETWEEN 3 AND 250),
-    CONSTRAINT ck_Huesped_Correo CHECK (Correo LIKE '%@gmail.com')
-  );
-
---? El campo Estado puede estar 'SIN RESERVAR' o 'RESERVADO'
---? El campo Cantidad_personas no puede ser negativo
---? El campo Fecha_fin debe ser SIEMPRE mayor a Fecha_inicio
-CREATE TABLE
-  Reservacion (
-    --! ID_Reservacion lo generea el Sistema
-    ID_Reservacion INT GENERATED ALWAYS AS IDENTITY,
-    Estado VARCHAR(100) DEFAULT 'SIN RESERVAR',
-    Cantidad_personas INT NOT NULL,
-    Fecha_inicio DATE NOT NULL,
-    Fecha_fin DATE NOT NULL,
-    Fecha_reservacion DATE NOT NULL,
-    ID_Huesped INT NOT NULL,
-    --* Llave primaria
-    CONSTRAINT pk_Reservacion_IDReservacion PRIMARY KEY (ID_Reservacion),
-    --* Llave foranea relacionada con -> Huesped (ID)
-    CONSTRAINT fk_Reservacion_IDHuespued FOREIGN KEY (ID_Huesped) REFERENCES Huesped (ID_Huesped)
-      ON DELETE RESTRICT ON UPDATE CASCADE,
-    --* Verificar la integridad de los campos
-    CONSTRAINT ck_Reservacion_Estado CHECK (Estado IN ('RESERVADO', 'SIN RESERVAR')),
-    CONSTRAINT ck_Reservacion_CantidadPersona CHECK (Cantidad_personas > 0),
-    CONSTRAINT ck_Reservacion_Fechas CHECK (Fecha_fin > Fecha_inicio)
-  );
-
---? El campo Fecha_retiro debe ser MAYOR a Fecha_inicio
-CREATE TABLE
-  Estadia (
-    --! ID_Estadia lo generea el Sistema
-    ID_Estadia INT GENERATED ALWAYS AS IDENTITY,
-    Fecha_inicio DATE NOT NULL,
-    Fecha_retiro DATE NOT NULL,
-    Hora_llegada TIME NOT NULL,
-    Hora_retiro TIME NOT NULL,
-    ID_Reservacion INT NOT NULL,
-    --* Llave primaria
-    CONSTRAINT pk_Estadia_IDEstadia PRIMARY KEY (ID_Estadia),
-    --* Llave foranea relacionada con -> Reservacion (ID)
-    CONSTRAINT fk_Estadia_IDReservacion FOREIGN KEY (ID_Reservacion) REFERENCES Reservacion (ID_Reservacion)
-      ON DELETE RESTRICT ON UPDATE CASCADE,
-    --* Verificar la integridad de los campos
-    CONSTRAINT ck_Estadia_Fechas CHECK Fecha_retiro > Fecha_inicio
+    CONSTRAINT pk_Huesped_Correo UNIQUE (Correo),
+    CONSTRAINT pk_Huesped_Telefono UNIQUE (Telefono),
+    --* Verificar campos
+    CONSTRAINT ck_Huesped_Correo CHECK (Correo LIKE '%gmail.com')
   );
 
 CREATE TABLE
   Hotel (
-    ID_Hotel INT NOT NULL,
+    --! PK
+    ID_Hotel INT GENERATED ALWAYS AS IDENTITY,
     Nombre VARCHAR(250) NOT NULL,
-    Direccion INT NOT NULL,
-    Area NUMERIC(2) NOT NULL,
-    Horario VARCHAR(250) NOT NULL,
-    Estrellas INT NOT NULL,
-    PRIMARY KEY (ID_Hotel),
-    UNIQUE (Direccion)
+    Direccion VARCHAR(250) NOT NULL,
+    Area NUMERIC(10, 2) NOT NULL,
+    Estrellas INT DEFAULT 1,
+    Hora_Apertura TIME NOT NULL,
+    Hora_Cierre TIME NOT NULL,
+    --* Llave primaria del Hotel
+    CONSTRAINT pk_Hotel_IDHotel PRIMARY KEY (ID_Hotel),
+    --* Verificar campos
+    CONSTRAINT ck_Hotel_Estrellas CHECK (Estrellas BETWEEN 1 AND 5)
   );
 
-CREATE TABLE
-  Habitacion (
-    Numero INT NOT NULL,
-    Tipo VARCHAR(250) NOT NULL,
-    Tamaño VARCHAR(250) NOT NULL,
-    Camas INT NOT NULL,
-    Baños INT NOT NULL,
-    ID_Hotel INT NOT NULL,
-    PRIMARY KEY (Numero),
-    FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel)
-  );
-
-CREATE TABLE
-  Estadia_Habitacion (
-    ID_Estadia INT NOT NULL,
-    ID_Habitacion INT NOT NULL,
-    PRIMARY KEY (ID_Estadia, ID_Habitacion),
-    FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia),
-    FOREIGN KEY (ID_Habitacion) REFERENCES Habitacion (Numero)
-  );
-
+--? Servicios (Tipo) : BIENESTAR (SPA, Masajes), DEPORTIVOS (Psicina, Gimnasio), 
+--? HABITACION (Limpieza de Habitacion, Lavanderia), ALIMENTACION (Bar, Restaurante),
+--? ENTRETENIMIENTO (Cine, Karaoke)
 CREATE TABLE
   Servicio (
-    ID_Servicio INT NOT NULL,
+    --! PK
+    ID_Servicio INT GENERATED ALWAYS AS IDENTITY,
+    Zona VARCHAR(100) NOT NULL,
     Nombre VARCHAR(250) NOT NULL,
-    Tipo VARCHAR(250) NOT NULL,
-    Zona VARCHAR(250) NOT NULL,
-    PRIMARY KEY (ID_Servicio)
+    Tipo VARCHAR(50) NOT NULL,
+    Precio_Unitario NUMERIC(10, 2) NOT NULL,
+    Descripcion VARCHAR(250) NOT NULL,
+    --* Llave primaria del Servicio
+    CONSTRAINT pk_Servicio_IDServicio PRIMARY KEY (ID_Servicio),
+    --* Campos UNICOS para huesped
+    CONSTRAINT uq_Servicio_Nombre UNIQUE (Nombre),
+    --* Verificar campos
+    CONSTRAINT uq_Servicio_PrecioUnitario BETWEEN 1 AND 1000,
+    CONSTRAINT ck_Servicio_Tipo CHECK Servicio IN ('BIENESTAR', 'DEPORTIVOS', 'HABITACION', 'ALIMENTACION', 'ENTRETENIMIENTO')
   );
 
 CREATE TABLE
-  Estadia_Servicio (
-    ID_Servicio INT NOT NULL,
-    ID_Estadia INT NOT NULL,
-    PRIMARY KEY (ID_Servicio, ID_Estadia),
-    FOREIGN KEY (ID_Servicio) REFERENCES Servicio (ID_Servicio),
-    FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia)
+  Reservacion (
+    --! PK
+    ID_Reservacion INT GENERATED ALWAYS AS IDENTITY,
+    Estado VARCHAR(100) NOT NULL,
+    Cantidad_personas INT NOT NULL,
+    Fecha_inicio DATE NOT NULL,
+    Fecha_fin DATE NOT NULL,
+    Fecha_retiro DATE NOT NULL,
+    ID_Huesped INT NOT NULL,
+    PRIMARY KEY (ID_Reservacion),
+    FOREIGN KEY (ID_Huesped) REFERENCES Huesped (ID_Huesped)
+  );
+
+CREATE TABLE
+  Estadia (
+    --! PK
+    ID_Estadia INT GENERATED ALWAYS AS IDENTITY,
+    Fecha_Entrada DATE NOT NULL,
+    Fecha_Salida DATE NOT NULL,
+    Hora_Entrada TIME NOT NULL,
+    Hora_Salida TIME NOT NULL,
+    ID_Reservacion INT NOT NULL,
+    PRIMARY KEY (ID_Estadia),
+    FOREIGN KEY (ID_Reservacion) REFERENCES Reservacion (ID_Reservacion)
   );
 
 CREATE TABLE
   Factura (
-    ID_Factura INT NOT NULL,
+    --! PK
+    ID_Factura INT GENERATED ALWAYS AS IDENTITY,
     Fecha_factura DATE NOT NULL,
-    Precio_total NUMERIC NOT NULL,
+    Precio_total NUMERIC(10, 2) NOT NULL,
     ID_Estadia INT NOT NULL,
     PRIMARY KEY (ID_Factura),
     FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia)
   );
 
+--? Habitacion (Tipo) : INDIVIDUAL (15$ la noche), DOBLE (30$ la noche), 
+--? FAMILIAR (20$ la noche), SUITE(50$ la noche)
 CREATE TABLE
-  Detalle (
-    ID_Detalle INT NOT NULL,
-    Descripcion VARCHAR(250) NOT NULL,
-    Cantidad INT NOT NULL,
-    Precio NUMERIC NOT NULL,
-    ID_Factura INT NOT NULL,
-    ID_Habitacion INT NOT NULL,
+  Habitacion (
+    --! PK
+    Numero INT NOT NULL,
+    Tamaño NUMERIC(10, 2) NOT NULL,
+    Camas INT NOT NULL,
+    Baños INT NOT NULL,
+    Tipo VARCHAR(250) NOT NULL,
+    Precio NUMERIC(10, 2) NOT NULL,
     ID_Hotel INT NOT NULL,
-    PRIMARY KEY (ID_Detalle),
-    FOREIGN KEY (ID_Factura) REFERENCES Factura (ID_Factura),
-    FOREIGN KEY (ID_Habitacion) REFERENCES Habitacion (Numero),
+    --* Llave primaria del Servicio
+    PRIMARY KEY (Numero, ID_Hotel),
+    --* Llave foranea Habitacion -> Hotel (ID)
     FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel)
+      ON DELETE RESTRICT ON CASCADE UPDATE,
+    --* Verificar campos
+    CONSTRAINT ck_Habitacion_Tipo CHECK Habitacion IN ('INDIVIDUAL', 'DOBLE', 'FAMILIAR', 'SUITE')
   );
 
 CREATE TABLE
   Empleado (
-    ID_Empleado INT NOT NULL,
+    --! PK
+    ID_Empleado INT GENERATED ALWAYS AS IDENTITY,
     Nombre VARCHAR(250) NOT NULL,
     Correo VARCHAR(250) NOT NULL,
-    Horario VARCHAR(250) NOT NULL,
+    Hora_Entrada TIME NOT NULL,
+    Hora_Salida TIME NOT NULL,
     ID_Hotel INT NOT NULL,
-    PRIMARY KEY (ID_Empleado),
-    FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel)
-  );
-
-CREATE TABLE
-  Supervisor (
-    Departamento VARCHAR(250) NOT NULL,
-    Presupuesto NUMERIC NOT NULL,
-    ID_Empleado INT NOT NULL,
-    PRIMARY KEY (ID_Empleado),
-    FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
-  );
-
-CREATE TABLE
-  Operativo (
-    Cargo VARCHAR(250) NOT NULL,
-    ID_Empleado INT NOT NULL,
     ID_Supervisor INT NOT NULL,
-    ID_Servicio INT NOT NULL,
     PRIMARY KEY (ID_Empleado),
-    FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado),
-    FOREIGN KEY (ID_Supervisor) REFERENCES Supervisor (),
-    FOREIGN KEY (ID_Servicio) REFERENCES Servicio (ID_Servicio)
+    FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel),
+    FOREIGN KEY (ID_Supervisor) REFERENCES Empleado (ID_Empleado) UNIQUE (Correo)
   );
 
 CREATE TABLE
   PagoNomina (
-    ID_Salario INT NOT NULL,
-    Monto NUMERIC NOT NULL,
-    Fecha_pago DATE NOT NULL,
-    Metodo_pago VARCHAR(250) NOT NULL,
-    IVA NUMERIC NOT NULL,
-    Lugar VARCHAR(250) NOT NULL,
+    --! PK
+    ID_Salario INT GENERATED ALWAYS AS IDENTITY,
+    Monto NUMERIC(10, 2) NOT NULL,
+    Fecha_Pago DATE NOT NULL,
+    Metodo_Pago VARCHAR(50) NOT NULL,
+    IVA NUMERIC(2) NOT NULL,
+    Lugar VARCHAR(100) NOT NULL,
     ID_Empleado INT NOT NULL,
-    PRIMARY KEY (ID_Salario),
+    PRIMARY KEY (ID_Salario, ID_Empleado),
     FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
+  );
+
+CREATE TABLE
+  HistorialServicios (
+    --! PK
+    ID_HistorialServicios INT GENERATED ALWAYS AS IDENTITY,
+    Fecha_servicio DATE NOT NULL,
+    ID_Estadia INT NOT NULL,
+    ID_Servicio INT NOT NULL,
+    ID_Empleado INT NOT NULL,
+    PRIMARY KEY (ID_HistorialServicios),
+    FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia),
+    FOREIGN KEY (ID_Servicio) REFERENCES Servicio (ID_Servicio),
+    FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
+  );
+
+CREATE TABLE
+  Detalle (
+    --! PK
+    ID_Detalle INT GENERATED ALWAYS AS IDENTITY,
+    Precio_Subtotal NUMERIC(10, 2) NOT NULL,
+    Cantidad INT NOT NULL,
+    Descripcion VARCHAR(250) NOT NULL,
+    Precio_Unitario NUMERIC(10, 2) NOT NULL,
+    ID_Factura INT NOT NULL,
+    ID_HistorialServicios INT NOT NULL,
+    PRIMARY KEY (ID_Detalle, ID_Factura),
+    FOREIGN KEY (ID_Factura) REFERENCES Factura (ID_Factura),
+    FOREIGN KEY (ID_HistorialServicios) REFERENCES HistorialServicios (ID_HistorialServicios)
+  );
+
+CREATE TABLE
+  RegistroHabitaciones (
+    Precio_Subtotal NUMERIC(10, 2) NOT NULL,
+    ID_Estadia INT NOT NULL,
+    Numero INT NOT NULL,
+    ID_Hotel INT NOT NULL,
+    PRIMARY KEY (ID_Estadia, Numero, ID_Hotel),
+    FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia),
+    FOREIGN KEY (Numero, ID_Hotel) REFERENCES Habitacion (Numero,)
   );
