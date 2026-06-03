@@ -13,7 +13,7 @@ CREATE TABLE
     CONSTRAINT pk_Huesped_Correo UNIQUE (Correo),
     CONSTRAINT pk_Huesped_Telefono UNIQUE (Telefono),
     --* Verificar campos
-    CONSTRAINT ck_Huesped_Correo CHECK (Correo LIKE '%gmail.com')
+    CONSTRAINT ck_Huesped_Correo CHECK (lower(Correo) LIKE '%gmail.com')
   );
 
 CREATE TABLE
@@ -23,7 +23,7 @@ CREATE TABLE
     Nombre VARCHAR(250) NOT NULL,
     Direccion VARCHAR(250) NOT NULL,
     Area NUMERIC(10, 2) NOT NULL,
-    Estrellas INT DEFAULT 1,
+    Estrellas NUMERIC(2,1) DEFAULT 1,
     Hora_Apertura TIME NOT NULL,
     Hora_Cierre TIME NOT NULL,
     --* Llave primaria del Hotel
@@ -39,18 +39,16 @@ CREATE TABLE
   Servicio (
     --! PK
     ID_Servicio INT GENERATED ALWAYS AS IDENTITY,
-    Zona VARCHAR(100) NOT NULL,
     Nombre VARCHAR(250) NOT NULL,
     Tipo VARCHAR(50) NOT NULL,
     Precio_Unitario NUMERIC(10, 2) NOT NULL,
-    Descripcion VARCHAR(250) NOT NULL,
     --* Llave primaria del Servicio
     CONSTRAINT pk_Servicio_IDServicio PRIMARY KEY (ID_Servicio),
     --* Campos UNICOS para huesped
     CONSTRAINT uq_Servicio_Nombre UNIQUE (Nombre),
     --* Verificar campos
     CONSTRAINT uq_Servicio_PrecioUnitario CHECK (Precio_Unitario BETWEEN 1 AND 1000),
-    CONSTRAINT ck_Servicio_Tipo CHECK (Nombre IN ('BIENESTAR', 'DEPORTIVOS', 'HABITACION', 'ALIMENTACION', 'ENTRETENIMIENTO'))
+    CONSTRAINT ck_Servicio_Tipo CHECK (Tipo IN ('BIENESTAR', 'DEPORTIVOS', 'HABITACION', 'ALIMENTACION', 'ENTRETENIMIENTO'))
   );
 
 CREATE TABLE
@@ -63,8 +61,15 @@ CREATE TABLE
     Fecha_fin DATE NOT NULL,
     Fecha_retiro DATE NOT NULL,
     ID_Huesped INT NOT NULL,
-    PRIMARY KEY (ID_Reservacion),
-    FOREIGN KEY (ID_Huesped) REFERENCES Huesped (ID_Huesped)
+    --* Llave primaria del Reservacion
+    CONSTRAINT pk_Reservacion_IDReservacion PRIMARY KEY (ID_Reservacion),
+    --* Llave foranea de Reservacion (ID_Reservacion) -> Huesped (ID_Huesped)
+    CONSTRAINT fk_Reservacion_IDHuesped FOREIGN KEY (ID_Huesped) REFERENCES Huesped (ID_Huesped)
+      ON DELETE RESTRICT ON UPDATE CASCADE,
+    --* Verificar campos
+    CONSTRAINT ck_Reservacion_Estado CHECK (Estado IN ('CANCELADA', 'EN ESPERA', 'COMPLETADA')),
+    CONSTRAINT ck_Reservacion_Fechas CHECK (Fecha_fin > Fecha_inicio),
+    CONSTRAINT ck_Reservacion_CantidadPersonas CHECK (Cantidad_personas BETWEEN 1 AND 10)
   );
 
 CREATE TABLE
@@ -92,7 +97,7 @@ CREATE TABLE
   );
 
 --? Habitacion (Tipo) : INDIVIDUAL (15$ la noche), DOBLE (30$ la noche), 
---? FAMILIAR (20$ la noche), SUITE(50$ la noche)
+--? FAMILIAR (20$ la noche), SUITE (50$ la noche)
 CREATE TABLE
   Habitacion (
     --! PK
@@ -112,16 +117,19 @@ CREATE TABLE
     CONSTRAINT ck_Habitacion_Tipo CHECK (Tipo IN ('INDIVIDUAL', 'DOBLE', 'FAMILIAR', 'SUITE'))
   );
 
+--? Empleado (Cargo) : JEFE (Si es jefe el ID_Supervisor = NULL), 
+--? EMPLEADO (Si es EMPLEADO entonces tiene un ID_Supervisor)
 CREATE TABLE
   Empleado (
     --! PK
     ID_Empleado INT GENERATED ALWAYS AS IDENTITY,
     Nombre VARCHAR(250) NOT NULL,
     Correo VARCHAR(250) NOT NULL,
+    Cargo VARCHAR(250) NOT NULL,
     Hora_Entrada TIME NOT NULL,
     Hora_Salida TIME NOT NULL,
     ID_Hotel INT NOT NULL,
-    ID_Supervisor INT NOT NULL,
+    ID_Supervisor INT,
     PRIMARY KEY (ID_Empleado),
     FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel),
     FOREIGN KEY (ID_Supervisor) REFERENCES Empleado (ID_Empleado),
@@ -136,7 +144,6 @@ CREATE TABLE
     Fecha_Pago DATE NOT NULL,
     Metodo_Pago VARCHAR(50) NOT NULL,
     IVA NUMERIC(2) NOT NULL,
-    Lugar VARCHAR(100) NOT NULL,
     ID_Empleado INT NOT NULL,
     PRIMARY KEY (ID_Salario, ID_Empleado),
     FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
