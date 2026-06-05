@@ -18,7 +18,8 @@ CREATE TABLE
     CONSTRAINT uq_Huesped_Correo UNIQUE (Correo),
     CONSTRAINT uq_Huesped_Telefono UNIQUE (Telefono),
     --* Verificar campos
-    CONSTRAINT ck_Huesped_Correo CHECK (lower(Correo) LIKE '%gmail.com')
+    CONSTRAINT ck_Huesped_Correo CHECK (lower(Correo) LIKE '%gmail.com'),
+    CONSTRAINT ck_Huesped_DUI_Numerico CHECK (DUI ~ '^[0-9]+$')
   );
 
 CREATE TABLE
@@ -124,9 +125,9 @@ CREATE TABLE
     Precio NUMERIC(10, 2) NOT NULL,
     ID_Hotel INT NOT NULL,
     --* Llave primaria de la Habitacion (compuesta por Numero e ID_Hotel)
-    PRIMARY KEY (Numero, ID_Hotel), 
+    CONSTRAINT pk_Habitacion_Numero_IDHotel PRIMARY KEY (Numero, ID_Hotel), 
     --* Llave foranea Habitacion -> Hotel (ID)
-    FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel)
+    CONSTRAINT fk_Habitacion_IDHotel FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel)
       ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar campos
     CONSTRAINT ck_Habitacion_Tipo CHECK (Tipo IN ('INDIVIDUAL', 'DOBLE', 'FAMILIAR', 'SUITE'))
@@ -191,29 +192,37 @@ CREATE TABLE
     Descripcion VARCHAR(250) NOT NULL,
     Precio_Unitario NUMERIC(10, 2) NOT NULL,
     ID_Factura INT NOT NULL,
-    ID_HistorialServicios INT NOT NULL,
+    ID_HistorialServicios INT,
+    ID_Registro INT,
     --* Llave primaria de Detalle
     CONSTRAINT pk_Detalle_IDDetalle_IDFactura PRIMARY KEY (ID_Detalle, ID_Factura),
     --* Llave foranea de Detalle -> Factura (ID)
     CONSTRAINT fk_Detalle_IDFactura FOREIGN KEY (ID_Factura) REFERENCES Factura (ID_Factura)
       ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Llave foranea de Detalle -> HistorialServicios (ID)
-    CONSTRAINT fk_Detalle_Detalle FOREIGN KEY (ID_HistorialServicios) REFERENCES HistorialServicios (ID_HistorialServicios)
+    CONSTRAINT fk_Detalle_HistorialServicios FOREIGN KEY (ID_HistorialServicios) REFERENCES HistorialServicios (ID_HistorialServicios)
+      ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_Detalle_IDRegistro FOREIGN KEY (ID_Registro) REFERENCES RegistroHabitaciones (ID_Registro)
       ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar campos
     CONSTRAINT ck_Detalle_PrecioUnitario CHECK (Precio_Unitario > 0),
-    CONSTRAINT ck_Detalle_Cantidad CHECK (Cantidad >= 0)
+    CONSTRAINT ck_Detalle_Cantidad CHECK (Cantidad >= 0),
+    CONSTRAINT ck_Detalle_OrigenExclusivo CHECK (
+      (ID_HistorialServicios IS NOT NULL AND ID_Registro IS NULL) OR
+      (ID_HistorialServicios IS NULL AND ID_Registro IS NOT NULL)
+    )
   );
 
 CREATE TABLE
   RegistroHabitaciones (
     --! Registro de habitaciones asociadas a una estadía (puede ser más de una)
+    ID_Registro INT GENERATED ALWAYS AS IDENTITY,
     Precio_Subtotal NUMERIC(10, 2) NOT NULL,
     ID_Estadia INT NOT NULL,
     Numero INT NOT NULL,
     ID_Hotel INT NOT NULL,
     --* Llave primaria de RegistroHabitaciones
-    CONSTRAINT pk_RegistroHabitacion_IDEstadia_IDHotel_Numero PRIMARY KEY (ID_Estadia, Numero, ID_Hotel),
+    CONSTRAINT pk_RegistroHabitaciones_IDRegistro PRIMARY KEY (ID_Registro),
     --* Llave primaria de RegistroHabitacion -> Estadia (ID)
     CONSTRAINT fk_RegistroHabitacion_IDEstadia FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia)
       ON DELETE RESTRICT ON UPDATE CASCADE,
