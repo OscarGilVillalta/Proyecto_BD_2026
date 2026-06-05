@@ -155,9 +155,11 @@ CREATE TABLE
     --* Chequeo de coherencia entre Hora_Entrada y Hora_Salida
     CONSTRAINT ck_fechas_coherentes CHECK (Hora_Salida > Hora_Entrada),
     --* Llave foranea del ID_Hotel de la tabla Hotel
-    CONSTRAINT fk_ID_Hotel FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel),
+    CONSTRAINT fk_ID_Hotel FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel)
+    ON DELETE RESTRICT ON UPDATE CASCADE,
     --* LLave foranea ID_Supervisor de la misma tabla Empleado
     CONSTRAINT fk_ID_Supervisor FOREIGN KEY (ID_Supervisor) REFERENCES Empleado (ID_Empleado)
+    ON DELETE RESTRICT ON UPDATE CASCADE
   );
 
 CREATE TABLE
@@ -175,6 +177,7 @@ CREATE TABLE
     CONSTRAINT ck_Metoto_Pago CHECK (Metodo_Pago IN ('CHEQUE','TRANSFERENCIA')),
     --* Llave foranea de ID_Empleado de la tabla Empleado
     CONSTRAINT fk_ID_Empleado FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
+    ON DELETE RESTRICT ON UPDATE CASCADE
   );
 
 CREATE TABLE
