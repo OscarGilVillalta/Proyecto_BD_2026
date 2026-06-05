@@ -183,6 +183,27 @@ CREATE TABLE
     CONSTRAINT fk_HistorialServicio_IDEmpleado FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
   );
 
+  
+CREATE TABLE
+  RegistroHabitaciones (
+    --! Registro de habitaciones asociadas a una estadía (puede ser más de una)
+    ID_Registro INT GENERATED ALWAYS AS IDENTITY,
+    Precio_Subtotal NUMERIC(10, 2) NOT NULL,
+    ID_Estadia INT NOT NULL,
+    Numero INT NOT NULL,
+    ID_Hotel INT NOT NULL,
+    --* Llave primaria de RegistroHabitaciones
+    CONSTRAINT pk_RegistroHabitaciones_IDRegistro PRIMARY KEY (ID_Registro),
+    --* Llave primaria de RegistroHabitacion -> Estadia (ID)
+    CONSTRAINT fk_RegistroHabitacion_IDEstadia FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia)
+      ON DELETE RESTRICT ON UPDATE CASCADE,
+    --* Llave primaria de RegistroHabitacion -> Habitacion (ID, Numero)
+    CONSTRAINT fk_RegistroHabitacion_IDHotel_Numero FOREIGN KEY (Numero, ID_Hotel) REFERENCES Habitacion (Numero, ID_Hotel)
+      ON DELETE RESTRICT ON UPDATE CASCADE,
+    --* Verificar campos
+    CONSTRAINT ck_RegistroHabitacion_PrecioSubtotal CHECK (Precio_Subtotal > 0)
+  );
+
 CREATE TABLE
   Detalle (
     --! PK: Detalles de factura/servicios asociados
@@ -211,24 +232,4 @@ CREATE TABLE
       (ID_HistorialServicios IS NOT NULL AND ID_Registro IS NULL) OR
       (ID_HistorialServicios IS NULL AND ID_Registro IS NOT NULL)
     )
-  );
-
-CREATE TABLE
-  RegistroHabitaciones (
-    --! Registro de habitaciones asociadas a una estadía (puede ser más de una)
-    ID_Registro INT GENERATED ALWAYS AS IDENTITY,
-    Precio_Subtotal NUMERIC(10, 2) NOT NULL,
-    ID_Estadia INT NOT NULL,
-    Numero INT NOT NULL,
-    ID_Hotel INT NOT NULL,
-    --* Llave primaria de RegistroHabitaciones
-    CONSTRAINT pk_RegistroHabitaciones_IDRegistro PRIMARY KEY (ID_Registro),
-    --* Llave primaria de RegistroHabitacion -> Estadia (ID)
-    CONSTRAINT fk_RegistroHabitacion_IDEstadia FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia)
-      ON DELETE RESTRICT ON UPDATE CASCADE,
-    --* Llave primaria de RegistroHabitacion -> Habitacion (ID, Numero)
-    CONSTRAINT fk_RegistroHabitacion_IDHotel_Numero FOREIGN KEY (Numero, ID_Hotel) REFERENCES Habitacion (Numero, ID_Hotel)
-      ON DELETE RESTRICT ON UPDATE CASCADE,
-    --* Verificar campos
-    CONSTRAINT ck_RegistroHabitacion_PrecioSubtotal CHECK (Precio_Subtotal > 0)
   );
