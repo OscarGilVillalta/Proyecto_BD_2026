@@ -147,19 +147,19 @@ CREATE TABLE
     ID_Hotel INT NOT NULL,
     ID_Supervisor INT,
     --* Llave primaria  del empleado
-    CONSTRAINT pk_ID_Empleado PRIMARY KEY (ID_Empleado),
+    CONSTRAINT pk_Empleado_IDmpleado PRIMARY KEY (ID_Empleado),
     --* Restricion a correos unicos
-    CONSTRAINT uc_Correo UNIQUE (Correo),
-    --* Validacion en base al cargo
-    CONSTRAINT chk_reglas_cargo CHECK ((Cargo = 'JEFE' AND ID_Supervisor IS NULL) OR (Cargo = 'EMPLEADO' AND ID_Supervisor IS NOT NULL)),
-    --* Chequeo de coherencia entre Hora_Entrada y Hora_Salida
-    CONSTRAINT ck_fechas_coherentes CHECK (Hora_Salida > Hora_Entrada),
     --* Llave foranea del ID_Hotel de la tabla Hotel
-    CONSTRAINT fk_ID_Hotel FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel)
-    ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_Empleado_IDHotel FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel)
+      ON DELETE RESTRICT ON UPDATE CASCADE,
     --* LLave foranea ID_Supervisor de la misma tabla Empleado
-    CONSTRAINT fk_ID_Supervisor FOREIGN KEY (ID_Supervisor) REFERENCES Empleado (ID_Empleado)
-    ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT fk_Empleado_IDSupervisor FOREIGN KEY (ID_Supervisor) REFERENCES Empleado (ID_Empleado)
+      ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT uq_Empleado_Correo UNIQUE (Correo),
+    --* Validacion en base al cargo
+    CONSTRAINT ck_Empleado_reglasCargo CHECK ((Cargo = 'JEFE' AND ID_Supervisor IS NULL) OR (Cargo = 'EMPLEADO' AND ID_Supervisor IS NOT NULL)),
+    --* Chequeo de coherencia entre Hora_Entrada y Hora_Salida
+    CONSTRAINT ck_Empleadp_fechasCoherentes CHECK (Hora_Salida > Hora_Entrada)
   );
 
 CREATE TABLE
@@ -172,12 +172,12 @@ CREATE TABLE
     IVA NUMERIC(2) NOT NULL,
     ID_Empleado INT NOT NULL,
     --* LLave primaria compuesta por ID_Salario y ID_Empleado
-    CONSTRAINT pk_ID_Pago_Nominal PRIMARY KEY (ID_Salario, ID_Empleado),
-    --* Check para limitar la cantidad de opciones en Metodo_Pago
-    CONSTRAINT ck_Metoto_Pago CHECK (Metodo_Pago IN ('CHEQUE','TRANSFERENCIA')),
+    CONSTRAINT pk_PagoNomina_IDPagoNominal PRIMARY KEY (ID_Salario, ID_Empleado),
     --* Llave foranea de ID_Empleado de la tabla Empleado
-    CONSTRAINT fk_ID_Empleado FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
-    ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT fk_PagoNomina_IDEmpleado FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
+      ON DELETE RESTRICT ON UPDATE CASCADE,
+    --* Check para limitar la cantidad de opciones en Metodo_Pago
+    CONSTRAINT ck_PagoNomina_Metoto_Pago CHECK (Metodo_Pago IN ('CHEQUE','TRANSFERENCIA')),
   );
 
 CREATE TABLE
