@@ -137,7 +137,7 @@ CREATE TABLE
 --? EMPLEADO (Si es EMPLEADO entonces tiene un ID_Supervisor)
 CREATE TABLE
   Empleado (
-    --! PK
+    --! PK:Datos de los empleados
     ID_Empleado INT GENERATED ALWAYS AS IDENTITY,
     Nombre VARCHAR(250) NOT NULL,
     Correo VARCHAR(250) NOT NULL,
@@ -146,23 +146,35 @@ CREATE TABLE
     Hora_Salida TIME NOT NULL,
     ID_Hotel INT NOT NULL,
     ID_Supervisor INT,
-    PRIMARY KEY (ID_Empleado),
-    FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel),
-    FOREIGN KEY (ID_Supervisor) REFERENCES Empleado (ID_Empleado),
-    UNIQUE (Correo)
+    --* Llave primaria  del empleado
+    CONSTRAINT pk_ID_Empleado PRIMARY KEY (ID_Empleado),
+    --* Restricion a correos unicos
+    CONSTRAINT uc_Correo UNIQUE (Correo),
+    --* Validacion en base al cargo
+    CONSTRAINT chk_reglas_cargo CHECK ((Cargo = 'JEFE' AND ID_Supervisor IS NULL) OR (Cargo = 'EMPLEADO' AND ID_Supervisor IS NOT NULL)),
+    --* Chequeo de coherencia entre Hora_Entrada y Hora_Salida
+    CONSTRAINT ck_fechas_coherentes CHECK (Hora_Salida > Hora_Entrada),
+    --* Llave foranea del ID_Hotel de la tabla Hotel
+    CONSTRAINT fk_ID_Hotel FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel),
+    --* LLave foranea ID_Supervisor de la misma tabla Empleado
+    CONSTRAINT fk_ID_Supervisor FOREIGN KEY (ID_Supervisor) REFERENCES Empleado (ID_Empleado)
   );
 
 CREATE TABLE
   PagoNomina (
-    --! PK
+    --! PK: Llave compuesta sobre el pago de los empleados
     ID_Salario INT GENERATED ALWAYS AS IDENTITY,
     Monto NUMERIC(10, 2) NOT NULL,
     Fecha_Pago DATE NOT NULL,
     Metodo_Pago VARCHAR(50) NOT NULL,
     IVA NUMERIC(2) NOT NULL,
     ID_Empleado INT NOT NULL,
-    PRIMARY KEY (ID_Salario, ID_Empleado),
-    FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
+    --* LLave primaria compuesta por ID_Salario y ID_Empleado
+    CONSTRAINT pk_ID_Pago_Nominal PRIMARY KEY (ID_Salario, ID_Empleado),
+    --* Check para limitar la cantidad de opciones en Metodo_Pago
+    CONSTRAINT ck_Metoto_Pago CHECK (Metodo_Pago IN ('CHEQUE','TRANSFERENCIA')),
+    --* Llave foranea de ID_Empleado de la tabla Empleado
+    CONSTRAINT fk_ID_Empleado FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
   );
 
 CREATE TABLE
