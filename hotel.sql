@@ -19,7 +19,8 @@ CREATE TABLE
     CONSTRAINT uq_Huesped_Telefono UNIQUE (Telefono),
     --* Verificar campos
     CONSTRAINT ck_Huesped_Correo CHECK (lower(Correo) LIKE '%gmail.com'),
-    CONSTRAINT ck_Huesped_DUI_Numerico CHECK (DUI ~ '^[0-9]+$')
+    CONSTRAINT ck_Huesped_DUI_Numerico CHECK (DUI ~ '^[0-9]+$'),
+    CONSTRAINT ck_Huesped_Telefono CHECK (Telefono LIKE ('7%') OR Telefono LIKE ('6%'))
   );
 
 CREATE TABLE
@@ -52,7 +53,7 @@ CREATE TABLE
     CONSTRAINT pk_Servicio_IDServicio PRIMARY KEY (ID_Servicio),
     --* Campo único para nombre de servicio
     CONSTRAINT uq_Servicio_Nombre UNIQUE (Nombre),
-    CONSTRAINT ck_Servicio_PrecioUnitario CHECK (Precio_Unitario BETWEEN 1 AND 1000),
+    CONSTRAINT ck_Servicio_PrecioUnitario CHECK (Precio_Unitario >= 0),
     CONSTRAINT ck_Servicio_Tipo CHECK (Tipo IN ('BIENESTAR', 'DEPORTIVOS', 'HABITACION', 'ALIMENTACION', 'ENTRETENIMIENTO'))
   );
 
@@ -130,7 +131,12 @@ CREATE TABLE
     CONSTRAINT fk_Habitacion_IDHotel FOREIGN KEY (ID_Hotel) REFERENCES Hotel (ID_Hotel)
       ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar campos
-    CONSTRAINT ck_Habitacion_Tipo CHECK (Tipo IN ('INDIVIDUAL', 'DOBLE', 'FAMILIAR', 'SUITE'))
+    CONSTRAINT ck_Habitacion_Tipo CHECK (Tipo IN ('INDIVIDUAL', 'DOBLE', 'FAMILIAR', 'SUITE')),
+    CONSTRAINT ck_Habitacion_Tamaño CHECK (Tamaño > 0),
+    CONSTRAINT ck_Habitacion_Baños CHECK (Baños > 0),
+    CONSTRAINT ck_Habitacion_Camas CHECK (Camas > 0),
+    CONSTRAINT ck_Habitacion_Precio CHECK (Precio > 0),
+    CONSTRAINT ck_Habitacion_Numero CHECK (Numero > 0)
   );
 
 --? Empleado (Cargo) : JEFE (Si es jefe el ID_Supervisor = NULL), 
@@ -159,7 +165,7 @@ CREATE TABLE
     --* Validacion en base al cargo
     CONSTRAINT ck_Empleado_reglasCargo CHECK ((Cargo = 'JEFE' AND ID_Supervisor IS NULL) OR (Cargo = 'EMPLEADO' AND ID_Supervisor IS NOT NULL)),
     --* Chequeo de coherencia entre Hora_Entrada y Hora_Salida
-    CONSTRAINT ck_Empleadp_fechasCoherentes CHECK (Hora_Salida > Hora_Entrada)
+    CONSTRAINT ck_Empleado_fechasCoherentes CHECK (Hora_Salida > Hora_Entrada)
   );
 
 CREATE TABLE
@@ -177,7 +183,9 @@ CREATE TABLE
     CONSTRAINT fk_PagoNomina_IDEmpleado FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
       ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Check para limitar la cantidad de opciones en Metodo_Pago
-    CONSTRAINT ck_PagoNomina_Metoto_Pago CHECK (Metodo_Pago IN ('CHEQUE','TRANSFERENCIA')),
+    CONSTRAINT ck_PagoNomina_MetotoPago CHECK (Metodo_Pago IN ('CHEQUE','TRANSFERENCIA')),
+    CONSTRAINT ck_PagoNomina_Monto CHECK (Monto > 0),
+    CONSTRAINT ck_PagoNomina_IVA CHECK (IVA > 0)
   );
 
 CREATE TABLE
@@ -191,11 +199,14 @@ CREATE TABLE
     --* Llave primaria de Factura
     CONSTRAINT pk_HistorialServicio_IDHistorialServicio PRIMARY KEY (ID_HistorialServicios),
     --* Llave foranea HistorialServicios -> Estadia (ID)
-    CONSTRAINT fk_HistorialServicio_IDEstadia FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia),
+    CONSTRAINT fk_HistorialServicio_IDEstadia FOREIGN KEY (ID_Estadia) REFERENCES Estadia (ID_Estadia)
+      ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Llave foranea HistorialServicios -> Servicio (ID)
-    CONSTRAINT fk_HistorialServicio_IDServicio FOREIGN KEY (ID_Servicio) REFERENCES Servicio (ID_Servicio),
+    CONSTRAINT fk_HistorialServicio_IDServicio FOREIGN KEY (ID_Servicio) REFERENCES Servicio (ID_Servicio)
+      ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Llave foranea HistorialServicios -> Empleado (ID)
     CONSTRAINT fk_HistorialServicio_IDEmpleado FOREIGN KEY (ID_Empleado) REFERENCES Empleado (ID_Empleado)
+      ON DELETE RESTRICT ON UPDATE CASCADE
   );
 
   
@@ -216,7 +227,7 @@ CREATE TABLE
     CONSTRAINT fk_RegistroHabitacion_IDHotel_Numero FOREIGN KEY (Numero, ID_Hotel) REFERENCES Habitacion (Numero, ID_Hotel)
       ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar campos
-    CONSTRAINT ck_RegistroHabitacion_PrecioSubtotal CHECK (Precio_Subtotal > 0)
+    CONSTRAINT ck_RegistroHabitacion_PrecioSubtotal CHECK (Precio_Subtotal > 0) 
   );
 
 CREATE TABLE
@@ -243,6 +254,8 @@ CREATE TABLE
     --* Verificar campos
     CONSTRAINT ck_Detalle_PrecioUnitario CHECK (Precio_Unitario > 0),
     CONSTRAINT ck_Detalle_Cantidad CHECK (Cantidad >= 0),
+    --* En este campo se verifica que el detalle sea un ID_HistorialServicio (Servicio)
+    --* O que sea un RegistroHabitacion (La habitacion asociada)
     CONSTRAINT ck_Detalle_OrigenExclusivo CHECK (
       (ID_HistorialServicios IS NOT NULL AND ID_Registro IS NULL) OR
       (ID_HistorialServicios IS NULL AND ID_Registro IS NOT NULL)
