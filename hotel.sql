@@ -18,9 +18,9 @@ CREATE TABLE
     CONSTRAINT uq_Huesped_Correo UNIQUE (Correo),
     CONSTRAINT uq_Huesped_Telefono UNIQUE (Telefono),
     --* Verificar campos
-    CONSTRAINT ck_Huesped_Correo CHECK (lower(Correo) LIKE '%gmail.com'),
-    CONSTRAINT ck_Huesped_DUI_Numerico CHECK (DUI ~ '^[0-9]+$'),
-    CONSTRAINT ck_Huesped_Telefono CHECK (Telefono LIKE ('7%') OR Telefono LIKE ('6%'))
+	CONSTRAINT ck_Huesped_Correo CHECK (Correo ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+	CONSTRAINT ck_Huesped_DUI_Format CHECK (DUI ~ '^[0-9]{8}-[0-9]$'),
+	CONSTRAINT ck_Huesped_Telefono CHECK (Telefono ~ '^[67][0-9]{7}$')
   );
 
 CREATE TABLE
@@ -36,7 +36,8 @@ CREATE TABLE
     --* Llave primaria del Hotel
     CONSTRAINT pk_Hotel_IDHotel PRIMARY KEY (ID_Hotel),
     --* Verificar campos
-    CONSTRAINT ck_Hotel_Estrellas CHECK (Estrellas BETWEEN 1 AND 5)
+    CONSTRAINT ck_Hotel_Estrellas CHECK (Estrellas BETWEEN 1 AND 5),
+    CONSTRAINT ck_Hotel_Area CHECK (Area > 0)
   );
 
 --? Servicios (Tipo) : BIENESTAR (SPA, Masajes), DEPORTIVOS (Psicina, Gimnasio), 
@@ -76,7 +77,8 @@ CREATE TABLE
     --* Verificar campos
     CONSTRAINT ck_Reservacion_Estado CHECK (Estado IN ('CANCELADA', 'PENDIENTE', 'COMPLETADA')),
     CONSTRAINT ck_Reservacion_Fechas CHECK (Fecha_fin > Fecha_inicio),
-    CONSTRAINT ck_Reservacion_CantidadPersonas CHECK (Cantidad_personas BETWEEN 1 AND 10)
+    CONSTRAINT ck_Reservacion_CantidadPersonas CHECK (Cantidad_personas BETWEEN 1 AND 10),
+    CONSTRAINT ck_Reservacion_FechaRetiroValida CHECK (Fecha_retiro BETWEEN Fecha_inicio AND Fecha_fin)
   );
 
 CREATE TABLE
@@ -165,7 +167,8 @@ CREATE TABLE
     --* Validacion en base al cargo
     CONSTRAINT ck_Empleado_reglasCargo CHECK ((Cargo = 'JEFE' AND ID_Supervisor IS NULL) OR (Cargo = 'EMPLEADO' AND ID_Supervisor IS NOT NULL)),
     --* Chequeo de coherencia entre Hora_Entrada y Hora_Salida
-    CONSTRAINT ck_Empleado_fechasCoherentes CHECK (Hora_Salida > Hora_Entrada)
+    CONSTRAINT ck_Empleado_fechasCoherentes CHECK (Hora_Salida > Hora_Entrada),
+    CONSTRAINT ck_Empleado_NoAutoSupervision CHECK (ID_Empleado != ID_Supervisor)
   );
 
 CREATE TABLE
@@ -175,7 +178,7 @@ CREATE TABLE
     Monto NUMERIC(10, 2) NOT NULL,
     Fecha_Pago DATE NOT NULL,
     Metodo_Pago VARCHAR(50) NOT NULL,
-    IVA NUMERIC(2) NOT NULL,
+    IVA NUMERIC(5,2) NOT NULL,
     ID_Empleado INT NOT NULL,
     --* LLave primaria compuesta por ID_Salario y ID_Empleado
     CONSTRAINT pk_PagoNomina_IDPagoNominal PRIMARY KEY (ID_Salario, ID_Empleado),
@@ -185,7 +188,7 @@ CREATE TABLE
     --* Check para limitar la cantidad de opciones en Metodo_Pago
     CONSTRAINT ck_PagoNomina_MetotoPago CHECK (Metodo_Pago IN ('CHEQUE','TRANSFERENCIA')),
     CONSTRAINT ck_PagoNomina_Monto CHECK (Monto > 0),
-    CONSTRAINT ck_PagoNomina_IVA CHECK (IVA > 0)
+	CONSTRAINT ck_PagoNomina_IVA CHECK (IVA >= 0 AND IVA <= 100)
   );
 
 CREATE TABLE
@@ -226,6 +229,8 @@ CREATE TABLE
     --* Llave primaria de RegistroHabitacion -> Habitacion (ID, Numero)
     CONSTRAINT fk_RegistroHabitacion_IDHotel_Numero FOREIGN KEY (Numero, ID_Hotel) REFERENCES Habitacion (Numero, ID_Hotel)
       ON DELETE RESTRICT ON UPDATE CASCADE,
+      --*Campos únicos
+      CONSTRAINT uq_RegistroHabitacion_Estadia_Habitacion UNIQUE (ID_Estadia, Numero, ID_Hotel),
     --* Verificar campos
     CONSTRAINT ck_RegistroHabitacion_PrecioSubtotal CHECK (Precio_Subtotal > 0) 
   );
@@ -261,3 +266,4 @@ CREATE TABLE
       (ID_HistorialServicios IS NULL AND ID_Registro IS NOT NULL)
     )
   );
+
