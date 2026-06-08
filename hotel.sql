@@ -8,7 +8,7 @@ CREATE TABLE
     --! PK: Identificador único de huésped
     ID_Huesped INT GENERATED ALWAYS AS IDENTITY,
     Nombre VARCHAR(250) NOT NULL,
-    DUI CHAR(9) NOT NULL,
+    DUI CHAR(10) NOT NULL,
     Correo VARCHAR(250) NOT NULL,
     Telefono CHAR(8) NOT NULL,
     --* Llave primaria de Huesped
@@ -169,7 +169,6 @@ CREATE TABLE
     --* Validacion en base al cargo
     CONSTRAINT ck_Empleado_reglasCargo CHECK ((Cargo = 'JEFE' AND ID_Supervisor IS NULL) OR (Cargo = 'EMPLEADO' AND ID_Supervisor IS NOT NULL)),
     --* Chequeo de coherencia entre Hora_Entrada y Hora_Salida
-    CONSTRAINT ck_Empleado_fechasCoherentes CHECK (Hora_Salida > Hora_Entrada),
     CONSTRAINT ck_Empleado_NoAutoSupervision CHECK (ID_Empleado != ID_Supervisor)
   );
 
@@ -268,4 +267,3 @@ CREATE TABLE
       (ID_HistorialServicios IS NULL AND ID_Registro IS NOT NULL)
     )
   );
-
