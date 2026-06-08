@@ -37,7 +37,9 @@ CREATE TABLE
     CONSTRAINT pk_Hotel_IDHotel PRIMARY KEY (ID_Hotel),
     --* Verificar campos
     CONSTRAINT ck_Hotel_Estrellas CHECK (Estrellas BETWEEN 1 AND 5),
-    CONSTRAINT ck_Hotel_Area CHECK (Area > 0)
+    CONSTRAINT ck_Hotel_Area CHECK (Area > 0),
+    CONSTRAINT ck_Hotel_HoraApertura_HHMM CHECK (date_trunc('minute', Hora_Apertura) = Hora_Apertura),
+    CONSTRAINT ck_Hotel_HoraCierre_HHMM CHECK (date_trunc('minute', Hora_Cierre) = Hora_Cierre)
   );
 
 --? Servicios (Tipo) : BIENESTAR (SPA, Masajes), DEPORTIVOS (Psicina, Gimnasio), 
@@ -48,7 +50,7 @@ CREATE TABLE
     --! PK: Tipos de servicios ofrecidos por el hotel
     ID_Servicio INT GENERATED ALWAYS AS IDENTITY,
     Nombre VARCHAR(250) NOT NULL,
-    Tipo VARCHAR(50) NOT NULL,
+    Tipo VARCHAR(250) NOT NULL,
     Precio_Unitario NUMERIC(10, 2) NOT NULL,
     --* Llave primaria del Servicio
     CONSTRAINT pk_Servicio_IDServicio PRIMARY KEY (ID_Servicio),
@@ -64,10 +66,9 @@ CREATE TABLE
     --! PK: Reserva asociada a un huesped
     ID_Reservacion INT GENERATED ALWAYS AS IDENTITY,
     Estado VARCHAR(100) NOT NULL,
-    Cantidad_personas INT NOT NULL,
-    Fecha_inicio DATE NOT NULL,
-    Fecha_fin DATE NOT NULL,
-    Fecha_retiro DATE NOT NULL,
+    Cantidad_Personas INT NOT NULL,
+    Fecha_Inicio DATE NOT NULL,
+    Fecha_Fin DATE NOT NULL,
     ID_Huesped INT NOT NULL,
     --* Llave primaria del Reservacion
     CONSTRAINT pk_Reservacion_IDReservacion PRIMARY KEY (ID_Reservacion),
@@ -77,18 +78,17 @@ CREATE TABLE
     --* Verificar campos
     CONSTRAINT ck_Reservacion_Estado CHECK (Estado IN ('CANCELADA', 'PENDIENTE', 'COMPLETADA')),
     CONSTRAINT ck_Reservacion_Fechas CHECK (Fecha_fin > Fecha_inicio),
-    CONSTRAINT ck_Reservacion_CantidadPersonas CHECK (Cantidad_personas BETWEEN 1 AND 10),
-    CONSTRAINT ck_Reservacion_FechaRetiroValida CHECK (Fecha_retiro BETWEEN Fecha_inicio AND Fecha_fin)
+    CONSTRAINT ck_Reservacion_CantidadPersonas CHECK (Cantidad_personas BETWEEN 1 AND 10)
   );
 
 CREATE TABLE
   Estadia (
     --! PK: Estancia concreta asociada a una reservacion
     ID_Estadia INT GENERATED ALWAYS AS IDENTITY,
-    Fecha_Entrada DATE NOT NULL,
-    Fecha_Salida DATE NOT NULL,
-    Hora_Entrada TIME NOT NULL,
-    Hora_Salida TIME NOT NULL,
+    Fecha_Entrada DATE,
+    Fecha_Salida DATE,
+    Hora_Entrada TIME,
+    Hora_Salida TIME,
     ID_Reservacion INT NOT NULL,
     --* Llave primaria de Estadia
     CONSTRAINT pk_Estadia_IDEstadia PRIMARY KEY (ID_Estadia),
@@ -96,7 +96,9 @@ CREATE TABLE
     CONSTRAINT fk_Estadia_IDReservacion FOREIGN KEY (ID_Reservacion) REFERENCES Reservacion (ID_Reservacion)
       ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar campos
-    CONSTRAINT ck_Estadia_Fechas CHECK (Fecha_Salida > Fecha_Entrada)
+    CONSTRAINT ck_Estadia_Fechas CHECK (Fecha_Salida > Fecha_Entrada),
+    CONSTRAINT ck_Hotel_HoraEntrada_HHMM CHECK (date_trunc('minute', Hora_Entrada) = Hora_Apertura),
+    CONSTRAINT ck_Hotel_HoraSalida_HHMM CHECK (date_trunc('minute', Hora_Salida) = Hora_Cierre)
   );
 
 CREATE TABLE
@@ -188,7 +190,7 @@ CREATE TABLE
     --* Check para limitar la cantidad de opciones en Metodo_Pago
     CONSTRAINT ck_PagoNomina_MetotoPago CHECK (Metodo_Pago IN ('CHEQUE','TRANSFERENCIA')),
     CONSTRAINT ck_PagoNomina_Monto CHECK (Monto > 0),
-	CONSTRAINT ck_PagoNomina_IVA CHECK (IVA >= 0 AND IVA <= 100)
+	  CONSTRAINT ck_PagoNomina_IVA CHECK (IVA >= 0 AND IVA <= 100)
   );
 
 CREATE TABLE
