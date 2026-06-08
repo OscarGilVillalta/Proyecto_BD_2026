@@ -18,7 +18,7 @@ CREATE TABLE
     CONSTRAINT uq_Huesped_Correo UNIQUE (Correo),
     CONSTRAINT uq_Huesped_Telefono UNIQUE (Telefono),
     --* Verificar campos
-	CONSTRAINT ck_Huesped_Correo CHECK (Correo ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+	CONSTRAINT ck_Huesped_Correo CHECK (Correo ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
 	CONSTRAINT ck_Huesped_DUI_Format CHECK (DUI ~ '^[0-9]{8}-[0-9]$'),
 	CONSTRAINT ck_Huesped_Telefono CHECK (Telefono ~ '^[67][0-9]{7}$')
   );
@@ -97,8 +97,8 @@ CREATE TABLE
       ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar campos
     CONSTRAINT ck_Estadia_Fechas CHECK (Fecha_Salida > Fecha_Entrada),
-    CONSTRAINT ck_Hotel_HoraEntrada_HHMM CHECK (date_trunc('minute', Hora_Entrada) = Hora_Apertura),
-    CONSTRAINT ck_Hotel_HoraSalida_HHMM CHECK (date_trunc('minute', Hora_Salida) = Hora_Cierre)
+    CONSTRAINT ck_Hotel_HoraEntrada_HHMM CHECK (date_trunc('minute', Hora_Entrada) = Hora_Entrada),
+    CONSTRAINT ck_Hotel_HoraSalida_HHMM CHECK (date_trunc('minute', Hora_Salida) = Hora_Salida)
   );
 
 CREATE TABLE
