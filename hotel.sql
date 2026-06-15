@@ -56,7 +56,7 @@ CREATE TABLE
     CONSTRAINT pk_Servicio_IDServicio PRIMARY KEY (ID_Servicio),
     --* Campo único para nombre de servicio
     CONSTRAINT uq_Servicio_Nombre UNIQUE (Nombre),
-    CONSTRAINT ck_Servicio_PrecioUnitario CHECK (Precio_Unitario >= 0),
+    CONSTRAINT ck_Servicio_PrecioUnitario CHECK (Precio_Unitario > 0),
     CONSTRAINT ck_Servicio_Tipo CHECK (Tipo IN ('BIENESTAR', 'DEPORTIVOS', 'HABITACION', 'ALIMENTACION', 'ENTRETENIMIENTO'))
   );
 
@@ -77,7 +77,7 @@ CREATE TABLE
       ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar campos
     CONSTRAINT ck_Reservacion_Estado CHECK (Estado IN ('CANCELADA', 'PENDIENTE', 'COMPLETADA')),
-    CONSTRAINT ck_Reservacion_Fechas CHECK (Fecha_fin > Fecha_inicio),
+    CONSTRAINT ck_Reservacion_Fechas CHECK (Fecha_fin >= Fecha_inicio),
     CONSTRAINT ck_Reservacion_CantidadPersonas CHECK (Cantidad_personas BETWEEN 1 AND 10)
   );
 
@@ -96,7 +96,7 @@ CREATE TABLE
     CONSTRAINT fk_Estadia_IDReservacion FOREIGN KEY (ID_Reservacion) REFERENCES Reservacion (ID_Reservacion)
       ON DELETE RESTRICT ON UPDATE CASCADE,
     --* Verificar campos
-    CONSTRAINT ck_Estadia_Fechas CHECK (Fecha_Salida > Fecha_Entrada),
+    CONSTRAINT ck_Estadia_Fechas CHECK (Fecha_Salida >= Fecha_Entrada),
     CONSTRAINT ck_Hotel_HoraEntrada_HHMM CHECK (date_trunc('minute', Hora_Entrada) = Hora_Entrada),
     CONSTRAINT ck_Hotel_HoraSalida_HHMM CHECK (date_trunc('minute', Hora_Salida) = Hora_Salida)
   );
@@ -168,8 +168,14 @@ CREATE TABLE
     CONSTRAINT uq_Empleado_Correo UNIQUE (Correo),
     --* Validacion en base al cargo
     CONSTRAINT ck_Empleado_reglasCargo CHECK ((Cargo = 'JEFE' AND ID_Supervisor IS NULL) OR (Cargo = 'EMPLEADO' AND ID_Supervisor IS NOT NULL)),
-    --* Chequeo de coherencia entre Hora_Entrada y Hora_Salida
-    CONSTRAINT ck_Empleado_NoAutoSupervision CHECK (ID_Empleado != ID_Supervisor)
+    --* Chequeo de coherencia para evitar que un empleado se supervise a sí mismo
+    CONSTRAINT ck_Empleado_NoAutoSupervision CHECK (ID_Empleado != ID_Supervisor),
+    --* Validar el email del empleado
+    CONSTRAINT ck_Empleado_Correo CHECK (Correo ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
+    --* Validar cargo del empleado
+    CONSTRAINT ck_Empleado_Cargo CHECK (Cargo IN ('JEFE', 'EMPLEADO')),
+    --* Validar que la hora de entrada sea menor a la hora de salida
+    CONSTRAINT ck_Empleado_Horario CHECK (Hora_Entrada < Hora_Salida)
   );
 
 CREATE TABLE
