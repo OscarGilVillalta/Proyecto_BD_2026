@@ -133,6 +133,97 @@ begin
 end;
 $$;
 
+-- 5. Funcion para obtener un resumen del huesped
+create or replace function fn_resumen_huesped(
+    p_id_huesped INT
+)
+returns table(
+    huesped VARCHAR(250),
+    reservaciones BIGINT,
+    estadias BIGINT,
+    total_gastado NUMERIC(10,2)
+)
+language plpgsql
+as
+$$
+begin
+
+    return query
+
+    select
+        h.Nombre,
+
+        count(distinct r.ID_Reservacion),
+
+        count(distinct e.ID_Estadia),
+
+        coalesce(
+            sum(f.Precio_Total),
+            0
+        )
+
+    from Huesped h
+
+    left join Reservacion r
+        on h.ID_Huesped = r.ID_Huesped
+
+    left join Estadia e
+        on r.ID_Reservacion = e.ID_Reservacion
+
+    left join Factura f
+        on e.ID_Estadia = f.ID_Estadia
+
+    where h.ID_Huesped = p_id_huesped
+
+    group by h.Nombre;
+
+end;
+$$;
+
+-- 6. Funcion para obtener un resumen del hotel
+create or replace function fn_resumen_hotel(
+    p_id_hotel INT
+)
+returns table(
+    hotel VARCHAR(250),
+    habitaciones BIGINT,
+    empleados BIGINT,
+    servicios BIGINT
+)
+language plpgsql
+as
+$$
+begin
+
+    return query
+
+    select
+        h.Nombre,
+
+        (
+            select count(*)
+            from Habitacion ha
+            where ha.ID_Hotel = h.ID_Hotel
+        ),
+
+        (
+            select count(*)
+            from Empleado e
+            where e.ID_Hotel = h.ID_Hotel
+        ),
+
+        (
+            select count(*)
+            from Servicio
+        )
+
+    from Hotel h
+
+    where h.ID_Hotel = p_id_hotel;
+
+end;
+$$;
+
 -- ================================================================================================
 -- PROCESOS ALMACENADOS
 
@@ -211,6 +302,37 @@ begin
 end;
 $$;
 
+-- 3. Proceso almacenado que permite realizar un pago de nomina
+-- 3. Proceso almacenado para registrar un pago de nómina
+create or replace procedure sp_registrar_pago_nomina(
+    p_monto NUMERIC(10,2),
+    p_metodo_pago VARCHAR(50),
+    p_iva NUMERIC(5,2),
+    p_id_empleado INT
+)
+language plpgsql
+as
+$$
+begin
+
+    insert into PagoNomina(
+        Monto,
+        Fecha_Pago,
+        Metodo_Pago,
+        IVA,
+        ID_Empleado
+    )
+    values(
+        p_monto,
+        current_date,
+        p_metodo_pago,
+        p_iva,
+        p_id_empleado
+    );
+
+end;
+$$;
+
 -- ================================================================================================
 -- TRIGGERS
 
@@ -263,7 +385,7 @@ on RegistroHabitaciones
 for each row
 execute function fn_validar_disponibilidad_habitacion();
 
--- Trigger que valida que un empleado registre servivicios solamente en su hotel
+-- 2. Trigger que valida que un empleado registre servivicios solamente en su hotel
 
 -- Funcion
 create or replace function fn_validar_empleado_hotel()
@@ -297,11 +419,43 @@ begin
 end;
 $$;
 
+-- Trigger
 create trigger trg_validar_empleado_hotel
 before insert
 on HistorialServicios
 for each row
 execute function fn_validar_empleado_hotel();
+
+-- 3. Trigger que se asegura que haya una factura unica
+-- Funcion
+create or replace function fn_validar_factura_unica()
+returns trigger
+language plpgsql
+as
+$$
+begin
+
+    if exists(
+        select 1
+        from Factura
+        where ID_Estadia = NEW.ID_Estadia
+    )
+    then
+        raise exception
+        'La estadía ya posee una factura';
+    end if;
+
+    return NEW;
+
+end;
+$$;
+
+-- Trigger
+create trigger trg_validar_factura_unica
+before insert
+on Factura
+for each row
+execute function fn_validar_factura_unica();
 
 -- ================================================================================================
 -- USOS
@@ -318,6 +472,12 @@ select * from fn_total_factura(1);
 
 -- Reporte completo de una estadia
 select * from fn_resumen_estadia(1);
+
+-- Resumen del huesped
+select * from fn_resumen_huesped(2);
+
+-- Resumen del hotel
+select * from fn_resumen_hotel(1);
 
 -- Procesos almacenados
 -- Registrar un servicio consumido
@@ -344,6 +504,17 @@ select
 from Estadia
 where ID_Estadia = 1;
 
+-- Registrar un pago de nomina
+call sp_registrar_pago_nomina(
+    850.00,
+    'TRANSFERENCIA',
+    13.00,
+    1
+);
+
+-- Verificacion
+select * from PagoNomina where ID_Empleado = 1;
+
 -- Triggers
 
 -- Intentar registrar una habitacion ocupada
@@ -366,3 +537,6 @@ call sp_registrar_servicio(
     2,  -- Servicio
     5   -- Empleado del Hotel B
 );
+
+-- Verificacion del Trigger que se asegura que hayan facturas unicas
+call sp_realizar_checkout(13);
