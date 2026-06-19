@@ -273,25 +273,22 @@ as
 $$
 declare
     v_total NUMERIC(10,2);
+    v_fecha_fin DATE;
 begin
 
     v_total :=
         fn_total_factura(p_id_estadia);
 
-    insert into Factura(
-        Fecha_Factura,
-        Precio_Total,
-        ID_Estadia
-    )
-    values(
-        current_date,
-        v_total,
-        p_id_estadia
-    );
+    select Fecha_Entrada into v_fecha_fin
+    from estadia;
+
+    update factura 
+    set precio_total = v_total, fecha_factura = v_fecha_fin
+    where id_estadia = p_id_estadia;
 
     update Estadia
     set
-        Fecha_Salida = current_date,
+        Fecha_Salida = v_fecha_fin,
         Hora_Salida = make_time(
             extract(hour from current_time)::int,
             extract(minute from current_time)::int,
@@ -299,6 +296,51 @@ begin
         )
     where ID_Estadia = p_id_estadia;
 
+end;
+$$;
+
+-- 3 xddd
+create or replace procedure sp_realizar_checkout(
+    p_id_reservacion INT
+)
+language plpgsql
+as
+$$
+declare
+    v_estado VARCHAR;
+    v_fecha_incio DATE;
+    v_precio_inicial NUMERIC(10,2);
+begin
+
+    -- si el estado es igual 'PENDIENTE' puede seguir
+    select fecha_inicio into v_fecha_incio from reservacion;
+    -- Se creara una estadia donde su fecha de fin aun no esta decidida
+    insert estadia into (fecha_entrada, hora_entrada, id_reservacion) 
+        values 
+    (v_fecha_incio, current_time, p_id_reservacion);
+    -- Habitacion que va a ocupar
+    -- Se creara una nueva factura relacionada con el id estadia
+    insert into factura (fecha_factura, precio_total, id_estadia)
+        values
+    (v_fecha_inicio, , )
+end;
+$$;
+
+-- 4 xdddd
+-- Crear una factura al momento de hacer check-in (Genera una estadia y las habitaciones que a reservado)
+create or replace procedure sp_realizar_checkout(
+    p_id_estadia INT
+)
+language plpgsql
+as
+$$
+declare
+    v_total NUMERIC(10,2);
+begin
+    -- Al momento de reservar se crea una estadia por defecto pendiente
+    -- Si la reservacion es pendiente generar una estadia con datos null
+    -- Luego asocias las habitaciones a la estadia generada
+    -- Por ultimo generar una factura con el id estadia
 end;
 $$;
 
@@ -468,7 +510,7 @@ select * from fn_total_servicios(1);
 select * from fn_total_habitaciones(1);
 
 -- Total general de la factura (habitaciones + servicios)
-select * from fn_total_factura(1);
+select * from fn_total_factura(5);
 
 -- Reporte completo de una estadia
 select * from fn_resumen_estadia(1);
@@ -491,11 +533,12 @@ call sp_registrar_servicio(
 select * from HistorialServicios where ID_Estadia = 1;
 
 -- Realizar un check-out de una estadia
-call sp_realizar_checkout(1);
+call sp_realizar_checkout(5);
+
+update factura set precio_total = 0.1 where id_estadia = 5;
 
 -- Verificacion de la factura que se genero
-select * from Factura where ID_Estadia = 1;
-
+select * from Factura where ID_Estadia = 5;
 -- Verificar la actualizacion de la estadia
 select
     ID_Estadia,
