@@ -339,14 +339,47 @@ $$
 declare
     v_total NUMERIC(10,2);
     v_fecha_fin DATE;
+    v_id_factura INT;
+    v_id_historial INT;
+    v_nombre_servicio VARCHAR(250);
+    v_precio_servicio NUMERIC(10,2);
 begin
 
-    v_total :=
-        fn_total_factura(p_id_estadia);
+    if not exists (
+        select 1 from Estadia where ID_Estadia = p_id_estadia
+    ) then
+        raise exception 'La estadía no existe';
+    end if;
 
-    update factura 
-    set precio_total = v_total, fecha_factura = current_date
-    where id_estadia = p_id_estadia;
+    select ID_Factura into v_id_factura
+    from Factura
+    where ID_Estadia = p_id_estadia;
+
+    if not found then
+        raise exception 'La estadía no tiene una factura asociada';
+    end if;
+
+    for v_id_historial, v_precio_servicio, v_nombre_servicio in
+        select hs.ID_HistorialServicios, s.Precio_Unitario, s.Nombre
+        from HistorialServicios hs
+        inner join Servicio s on s.ID_Servicio = hs.ID_Servicio
+        where hs.ID_Estadia = p_id_estadia
+          and not exists (
+              select 1 from Detalle d
+              where d.ID_HistorialServicios = hs.ID_HistorialServicios
+                and d.ID_Factura = v_id_factura
+          )
+    loop
+        insert into Detalle (Precio_Subtotal, Cantidad, Descripcion, Precio_Unitario, ID_Factura, ID_HistorialServicios)
+        values (v_precio_servicio, 1, 'Servicio: ' || v_nombre_servicio, v_precio_servicio, v_id_factura, v_id_historial);
+    end loop;
+
+    v_total := fn_total_factura(p_id_estadia);
+
+    update Factura
+    set Precio_Total = v_total,
+        Fecha_Factura = current_date
+    where ID_Estadia = p_id_estadia;
 
     update Estadia
     set
@@ -360,7 +393,11 @@ begin
 
     update Reservacion
     set Estado = 'COMPLETADA'
-    where ID_Reservacion = (select ID_Reservacion from estadia where ID_Estadia = p_id_estadia);
+    where ID_Reservacion = (
+        select ID_Reservacion from Estadia where ID_Estadia = p_id_estadia
+    );
+
+    raise notice 'Check-out realizado. Total a pagar: $%', v_total;
 
 end;
 $$;
@@ -527,7 +564,6 @@ for each row
 execute function fn_validar_factura_unica();
 
 /*
-
 -- ================================================================================================
 -- EJEMPLOS DE USO (ejecutar en orden, después de haber insertado los datos de hotel_dml.sql)
 -- ================================================================================================
@@ -537,46 +573,56 @@ execute function fn_validar_factura_unica();
 -- =============================================
 
 -- 1. Realizar check-in (crea factura con el total de habitaciones)
+select * from reservacion where estado = 'PENDIENTE' limit 1;
+select * from Estadia where ID_Reservacion = 1;
+select * from Factura where ID_Estadia = 741;
 call sp_realizar_checkin(1);
 
 -- 2. Verificar la factura generada
-select * from Factura where ID_Estadia = 1;
+select * from Estadia where ID_Reservacion = 1;
+select * from Factura where ID_Estadia = 741;
 
 -- 3. Verificar las habitaciones asignadas a la estadia
-select * from RegistroHabitaciones where ID_Estadia = 1;
+select * from RegistroHabitaciones where ID_Estadia = 741;
 
--- 4. Registrar un servicio a la estadia (empleado 2 del hotel 1, servicio 1)
-call sp_registrar_servicio(1, 1, 2);
+-- 4. Registrar un servicio a la estadia (estadia, servicio, empleado)
+select * from historialservicios where id_estadia = 741;
+call sp_registrar_servicio(741, 2, 101);
 
 -- 5. Verificar el servicio registrado
-select * from HistorialServicios where ID_Estadia = 1;
+select * from HistorialServicios where ID_Estadia = 741;
 
 -- 6. Calcular total gastado en servicios de la estadia
-select fn_total_servicios(1) as total_servicios;
+select fn_total_servicios(741) as total_servicios;
 
 -- 7. Calcular total gastado en habitaciones de la estadia
-select fn_total_habitaciones(1) as total_habitaciones;
+select fn_total_habitaciones(741) as total_habitaciones;
 
 -- 8. Calcular total general de la factura (habitaciones + servicios)
-select fn_total_factura(1) as total_factura;
+select fn_total_factura(741) as total_factura;
 
 -- 9. Resumen completo de la estadia
-select * from fn_resumen_estadia(1);
+select * from fn_resumen_estadia(741);
 
 -- 10. Realizar check-out (calcula total final y actualiza factura)
-call sp_realizar_checkout(1);
+select * from factura where id_estadia = 741;
+select * from detalle where id_factura = 573;
+call sp_realizar_checkout(741);
+
+select * from detalle where id_factura = 573;
 
 -- 11. Verificar factura con el total final
-select * from Factura where ID_Estadia = 1;
+select * from Factura where ID_Estadia = 741;
 
 -- 12. Verificar la estadaa con fecha y hora de salida
-select ID_Estadia, Fecha_Entrada, Hora_Entrada, Fecha_Salida, Hora_Salida
-from Estadia where ID_Estadia = 1;
+select * from Estadia where ID_Estadia = 741;
 
 -- 13. Resumen del huesped (reservaciones, estadías, total gastado)
-select * from fn_resumen_huesped(1);
+select * from huesped where nombre = 'Madelin Windas';
+select * from fn_resumen_huesped(10);
+select * from reservacion where id_huesped = 10;
 
--- 14. Resumen del hotel (habitaciones, empleados, servicios)
+-- 14. Resumen del hotel (id_hotel)
 select * from fn_resumen_hotel(1);
 
 -- 15. Registrar un pago de nomina para el empleado 1
@@ -598,5 +644,4 @@ select * from PagoNomina where ID_Empleado = 1;
 
 -- 19. Intentar crear una segunda factura para la misma estadía (debe lanzar error)
 -- call sp_realizar_checkin(1);
-
 */
