@@ -285,6 +285,13 @@ begin
     from Reservacion
     where ID_Reservacion = p_id_reservacion;
 
+    if exists (
+        select 1 from Factura where ID_Estadia = v_id_estadia
+    ) then
+        raise notice 'La estadía % ya tiene una factura registrada', v_id_estadia;
+        return;
+    end if;
+
     if not found then
         raise exception 'La reservación no existe';
     end if;
