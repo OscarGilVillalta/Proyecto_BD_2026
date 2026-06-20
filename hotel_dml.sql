@@ -8554,7 +8554,7 @@ INSERT INTO Detalle (Precio_Subtotal, Cantidad, Descripcion, Precio_Unitario, ID
 (25.64, 1, 'Servicio: Merienda Tarde', 25.64, 572, 770, NULL)
 ;
 
-
+/*
 --Habitaciones disponibles en un rango de fechas
 SELECT 
     hab.ID_Hotel,
@@ -8571,7 +8571,7 @@ WHERE NOT EXISTS (
     JOIN Reservacion res ON est.ID_Reservacion = res.ID_Reservacion
     WHERE rh.Numero = hab.Numero 
       AND rh.ID_Hotel = hab.ID_Hotel
-      AND res.Estado IN ('PENDIENTE', 'COMPLETADA')
+      AND res.Estado IN ('COMPLETADA')
       -- Usamos estrictamente las fechas de Reservacion para bloquear rangos futuros
       AND res.Fecha_Inicio < '2026-07-15' -- <- Fecha Fin del rango deseado
       AND res.Fecha_Fin > '2026-07-01'   -- <- Fecha Inicio del rango deseado
@@ -8646,7 +8646,7 @@ SELECT
     TO_CHAR(Fecha_factura, 'TMMonth') AS Nombre_Mes,
     SUM(Precio_total) AS Ingresos_Totales
 FROM Factura
-WHERE EXTRACT(YEAR FROM Fecha_factura) = 2026
+WHERE EXTRACT(YEAR FROM Fecha_factura) = 2025
 GROUP BY EXTRACT(MONTH FROM Fecha_factura), TO_CHAR(Fecha_factura, 'TMMonth')
 ORDER BY Numero_Mes;
-
+*/
