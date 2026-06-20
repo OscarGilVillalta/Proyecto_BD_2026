@@ -116,18 +116,6 @@ Versión alternativa de funciones y procedimientos con:
 
 ---
 
-### 📄 `FUNCION`
-
-Modificación del procedimiento:
-
-```sql
-sp_realizar_checkout
-```
-
-Ahora registra automáticamente en la tabla **Detalle** todos los servicios consumidos durante la estadía a partir de los registros almacenados en **HistorialServicios** al momento del checkout.
-
----
-
 ## 📊 Diagramas
 
 ### Modelo Entidad-Relación
